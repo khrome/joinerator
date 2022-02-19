@@ -67,8 +67,11 @@ describe('Joinerator', ()=>{
                     }
                     let validated = resultsSchema.validate(response);
                     should.not.exist(validated.error);
-                    //dates cause a problem
-                    //validated.value.should.deep.equal(response);
+                    validated.value.results = validated.value.results.map((item)=>{
+                        item.birthday = item.birthday.toISOString()
+                        return item;
+                    });
+                    validated.value.should.deep.equal(response);
                     server.close(()=>{
                         done();
                     })
