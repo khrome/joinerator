@@ -6,11 +6,11 @@
     "chai": "^4.3.6",
     "express": "^4.17.3",
     "joi": "^17.6.0",
+    "postman-request": "^2.88.1-postman.31",
     "mocha": "^9.2.0"
   },
   "dependencies": {
     "faker": "^5.5.3",
-    "postman-request": "^2.88.1-postman.31",
     "randexp": "^0.5.3",
     "seed-random": "^2.2.0"
   }
