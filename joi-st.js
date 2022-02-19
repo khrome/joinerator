@@ -7,7 +7,6 @@ faker.name.birthday = ()=>{
     let eightyYearsAgo = new Date();
     thirteenYearsAgo.setFullYear(thirteenYearsAgo.getFullYear()-13);
     eightyYearsAgo.setFullYear(eightyYearsAgo.getFullYear()-80);
-    console.log(thirteenYearsAgo, eightyYearsAgo);
     return faker.date.between(eightyYearsAgo, thirteenYearsAgo);
 }
 
@@ -97,7 +96,17 @@ let Data = function(definition){
             this.children[key] = new Data(value.schema);
         });
     }else{
-        this.schema = definition;
+        if(
+            definition &&
+            definition['$_terms'] &&
+            definition['$_terms']['_inclusions'] &&
+            definition['$_terms']['_inclusions'][0]
+        ){
+            let subschema = definition['$_terms']['_inclusions'][0];
+            this.subschema = new Data(subschema);
+        }else{
+            this.schema = definition;
+        }
     }
 }
 
@@ -106,7 +115,27 @@ Data.prototype.create = function(seed){
     RandExp.prototype.randInt = (from, to)=>{
         return randomInt(from, to, generator);
     }
-    if(this.schema) return makeNewValue(this.schema, generator)
+    if(this.subschema){
+        let numObjects = randomInt(1, 20, generator);
+        let results = [];
+        for(let lcv =0; lcv < numObjects; lcv++){
+            results.push(this.subschema.create(generator));
+        }
+        return results;
+    }else{
+        if(this.schema){
+            if(this.schema.type === 'array'){
+                let numObjects = randomInt(1, 20, generator);
+                let results = [];
+                for(let lcv =0; lcv < numObjects; lcv++){
+                    results.push(this.subschema.create(generator));
+                }
+                return results;
+            }else{
+                return makeNewValue(this.schema, generator)
+            }
+        }
+    }
 
     if(this.children){
         let results = {};

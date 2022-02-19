@@ -1,4 +1,4 @@
-joist.js
-========
+JOInerator
+==========
 
-Turn [Joi]() configurations into deterministic sample data APIs with no effort.
+Turn [Joi](https://joi.dev/) configurations into deterministic sample data APIs with no effort.

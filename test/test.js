@@ -8,6 +8,14 @@ const simpleSchema = Joi.object().keys({
     birthday: Joi.date().max('1-1-2004').iso()
 });
 
+const resultsSchema = Joi.object().keys({
+    results: Joi.array().items(Joi.object().keys({
+        email: Joi.string().email().required(),
+        phone: Joi.string().regex(/^\d{3}-\d{3}-\d{4}$/).required(),
+        birthday: Joi.date().max('1-1-2004').iso()
+    }))
+});
+
 describe('joist', ()=>{
     describe('can use a joi definition', ()=>{
         it('to generate simple objects', (done)=>{
@@ -21,6 +29,22 @@ describe('joist', ()=>{
             should.not.exist(bValidated.error);
             aValidated.value.should.deep.equal(aSeedGenerated);
             bValidated.value.should.deep.equal(bSeedGenerated);
+            done();
+        });
+
+        it('with arrays', (done)=>{
+            let definition = new joist.Data(resultsSchema);
+            aSeedGenerated = definition.create('A');
+            should.exist(aSeedGenerated.results);
+            Array.isArray(aSeedGenerated.results).should.equal(true);
+            let validated = resultsSchema.validate(aSeedGenerated);
+            should.not.exist(validated.error);
+            validated.value.should.deep.equal(aSeedGenerated);
+            aSeedGenerated.results.forEach((item)=>{
+                let aValidated = simpleSchema.validate(item);
+                should.not.exist(aValidated.error);
+                aValidated.value.should.deep.equal(item);
+            });
             done();
         });
     });
