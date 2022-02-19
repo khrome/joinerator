@@ -1,6 +1,8 @@
 const should = require('chai').should();
 const Joi = require('joi');
 const joist = require('../joi-st');
+const express = require('express');
+const request = require('postman-request');
 
 const simpleSchema = Joi.object().keys({
     email: Joi.string().email().required(),
@@ -16,7 +18,7 @@ const resultsSchema = Joi.object().keys({
     }))
 });
 
-describe('joist', ()=>{
+describe('Joinerator', ()=>{
     describe('can use a joi definition', ()=>{
         it('to generate simple objects', (done)=>{
             let definition = new joist.Data(simpleSchema);
@@ -46,6 +48,32 @@ describe('joist', ()=>{
                 aValidated.value.should.deep.equal(item);
             });
             done();
+        });
+
+        it('as an endpoint', (done)=>{
+            let app = express();
+            let definition = new joist.Data(resultsSchema);
+            definition.attach({
+                app  : app,
+                path : '/test/'
+            });
+            let server = app.listen(3000, ()=>{
+                request.post('http://localhost:3000/test/', (err, res, body)=>{
+                    let response = null;
+                    try{
+                        response = JSON.parse(body.toString());
+                    }catch(ex){
+                        should.not.exist(ex);
+                    }
+                    let validated = resultsSchema.validate(response);
+                    should.not.exist(validated.error);
+                    //dates cause a problem
+                    //validated.value.should.deep.equal(response);
+                    server.close(()=>{
+                        done();
+                    })
+                })
+            });
         });
     });
 });

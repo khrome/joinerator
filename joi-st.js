@@ -146,6 +146,22 @@ Data.prototype.create = function(seed){
     }
 };
 
+Data.prototype.attach = function(opts){ //endpoint, app, definition, input
+    let options = opts || {};
+    if(!options.app) throw new Error('.attach() requires an app be passed');
+    options.app[options.verb?options.verb.toLowerCase():'post'](
+        (options.path || '/'),
+        (req, res)=>{
+            if(options.input){
+
+            }else{
+                res.send(JSON.stringify(this.create('just_a_test')));
+            }
+        }
+    )
+    if(!options.app) throw new Error('.attach() requires an app be passed');
+};
+
 module.exports = {
     Data: Data
 }
