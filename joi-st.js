@@ -1,0 +1,112 @@
+const rand = require('seed-random');
+const faker = require('faker');
+const RandExp = require('randexp');
+//augment faker
+faker.name.birthday = ()=>{
+    let thirteenYearsAgo = new Date();
+    let eightyYearsAgo = new Date();
+    thirteenYearsAgo.setFullYear(thirteenYearsAgo.getFullYear()-13);
+    eightyYearsAgo.setFullYear(eightyYearsAgo.getFullYear()-80);
+    console.log(thirteenYearsAgo, eightyYearsAgo);
+    return faker.date.between(eightyYearsAgo, thirteenYearsAgo);
+}
+
+const joinAllKeys = (namespaces)=>{
+    let results = [];
+    namespaces.forEach((namespace)=>{
+        results = results.concat(
+            Object.keys(faker[namespace])
+                .map((field)=> namespace+'.'+field)
+        );
+    });
+    return results;
+}
+const masterlist = joinAllKeys([
+    'address',
+    'company',
+    'random',
+    'finance',
+    'name',
+    'commerce',
+    'internet',
+    'system',
+    'vehicle'
+]);
+let fakerFields = {};
+masterlist.forEach((field)=>{
+    fakerFields[field.split('.').pop()] = field;
+});
+
+let eightyYearsAgo = new Date();
+eightyYearsAgo.setFullYear(eightyYearsAgo.getFullYear()-80);
+
+const makeNewValue = (schema, rand) => {
+    faker.seed(rand());
+    let max = null;
+    let min = null;
+    for(let lcv =0; lcv < schema['_rules'].length; lcv++){
+        if(fakerFields[schema['_rules'][lcv].name]){
+            let location = fakerFields[schema['_rules'][lcv].name];
+            location = location.split('.');
+            return faker[location[0]][location[1]]();
+        }
+        if(schema['_rules'][lcv].name === 'pattern'){
+            return new RandExp(schema['_rules'][lcv].args.regex).gen();
+        }
+        if(schema['_rules'][lcv].name === 'max'){
+            max = schema['_rules'][lcv].args.date;
+        }
+    }
+    if(schema.type === 'date'){
+        return faker.date.between(
+            (min || eightyYearsAgo),
+            (max || new Date())
+        );
+        //return new RandExp(schema['_rules'][lcv].args.regex).gen();
+    }
+}
+
+const Random = {
+    seed : function(seed){ return rand(seed) },
+    numSeed : (str) => str
+                .split('')
+                .map((a) => a.charCodeAt(0))
+                .reduce((a, b) => a + b)
+ };
+
+const makeGenerator = (seed) => {
+    return Random.seed(seed);
+}
+
+let Data = function(definition){
+    if(definition['$_root']){
+        //definition['_ids']['_byKey']
+    }
+    //todo: arrays
+    if(definition.type == 'object' && definition['_ids']){
+        this.children = {};
+        definition['_ids']['_byKey'].forEach((value, key)=>{
+            this.children[key] = new Data(value.schema);
+        });
+    }else{
+        this.schema = definition;
+    }
+}
+
+Data.prototype.create = function(seed){
+    let generator = (typeof seed === 'string')?makeGenerator(seed):seed;
+    RandExp.prototype.randInt = generator;
+    if(this.schema) return makeNewValue(this.schema, generator)
+
+    if(this.children){
+        let results = {};
+        Object.keys(this.children).forEach((key)=>{
+            results[key] = this.children[key].create(generator);
+        });
+        return results;
+    }
+};
+
+module.exports = {
+    Data: Data
+}
