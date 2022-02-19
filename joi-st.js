@@ -40,8 +40,15 @@ masterlist.forEach((field)=>{
 let eightyYearsAgo = new Date();
 eightyYearsAgo.setFullYear(eightyYearsAgo.getFullYear()-80);
 
+let randomInt = (from, to, fractionalGenerator) =>{
+    let diff = to - from;
+    let val = Math.floor(from + fractionalGenerator()*diff);
+    return val;
+}
+
 const makeNewValue = (schema, rand) => {
-    faker.seed(rand());
+    let rnd = randomInt(0, 1000000, rand);
+    faker.seed(rnd);
     let max = null;
     let min = null;
     for(let lcv =0; lcv < schema['_rules'].length; lcv++){
@@ -62,12 +69,13 @@ const makeNewValue = (schema, rand) => {
             (min || eightyYearsAgo),
             (max || new Date())
         );
-        //return new RandExp(schema['_rules'][lcv].args.regex).gen();
     }
 }
 
 const Random = {
-    seed : function(seed){ return rand(seed) },
+    seed : function(seed){
+        return rand(seed)
+    },
     numSeed : (str) => str
                 .split('')
                 .map((a) => a.charCodeAt(0))
@@ -75,7 +83,7 @@ const Random = {
  };
 
 const makeGenerator = (seed) => {
-    return Random.seed(seed);
+    return Random.seed(Random.numSeed(seed));
 }
 
 let Data = function(definition){
@@ -95,7 +103,9 @@ let Data = function(definition){
 
 Data.prototype.create = function(seed){
     let generator = (typeof seed === 'string')?makeGenerator(seed):seed;
-    RandExp.prototype.randInt = generator;
+    RandExp.prototype.randInt = (from, to)=>{
+        return randomInt(from, to, generator);
+    }
     if(this.schema) return makeNewValue(this.schema, generator)
 
     if(this.children){
