@@ -10,7 +10,7 @@ Programmatic Usage
 
 ```javascript
     const Joinerator = require('joinerator');
-    let definition = new Joinerator.Data(simpleSchema);
+    let definition = new Joinerator.Data(joiSchema);
     let generatedData = definition.create('my-seed-value');
     //generatedData contains the data we created
 ```
@@ -20,7 +20,7 @@ API Usage
 ---------
 ```javascript
     const Joinerator = require('joinerator');
-    let definition = new Joinerator.Data(simpleSchema);
+    let definition = new Joinerator.Data(joiSchema);
     definition.attach({
         app : expressInstance,
         path : '/url/path/'

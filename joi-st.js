@@ -59,8 +59,11 @@ const makeNewValue = (schema, rand) => {
         if(schema['_rules'][lcv].name === 'pattern'){
             return new RandExp(schema['_rules'][lcv].args.regex).gen();
         }
-        if(schema['_rules'][lcv].name === 'max'){
+        if(schema['_rules'][lcv].name === 'max' && schema['_rules'][lcv].args.date){
             max = schema['_rules'][lcv].args.date;
+        }
+        if(schema['_rules'][lcv].name === 'min' && schema['_rules'][lcv].args.date){
+            min = schema['_rules'][lcv].args.date;
         }
     }
     if(schema.type === 'date'){
@@ -149,7 +152,7 @@ Data.prototype.create = function(seed){
 Data.prototype.attach = function(opts){ //endpoint, app, definition, input
     let options = opts || {};
     if(!options.app) throw new Error('.attach() requires an app be passed');
-    options.app[options.verb?options.verb.toLowerCase():'post'](
+    options.app[options.method?options.method.toLowerCase():'post'](
         (options.path || '/'),
         (req, res)=>{
             if(options.input){
@@ -159,7 +162,6 @@ Data.prototype.attach = function(opts){ //endpoint, app, definition, input
             }
         }
     )
-    if(!options.app) throw new Error('.attach() requires an app be passed');
 };
 
 module.exports = {
