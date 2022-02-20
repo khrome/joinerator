@@ -44,6 +44,17 @@ Given a directory structure:
 
 `transaction.spec.js` and `user.spec.js` are just Joi configurations which will be generated via `/v1/user/list`,  `/v1/user/:id`, `/v1/transaction/list` and `/v1/transaction/:id`
 
+```javascript
+const Joinerator = require('joinerator');
+new Joinerator.API({
+    app: expressInstance,
+    directory: '/directory/to/scan'
+}, ()=>{
+    //dir has been scanned, instance augmented
+    expressInstance.listen(port);
+});
+```
+
 There aren't many options, everything is currently JSON and incoming validation isn't quite ready yet. Otherwise, go crazy.
 
 
