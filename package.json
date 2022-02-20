@@ -2,6 +2,24 @@
   "name": "joinerator",
   "version": "0.1.0",
   "main": "joinerator.js",
+  "description": "Generate data using Joi definitions",
+  "keywords": [
+    "joi",
+    "data",
+    "api",
+    "express",
+    "generate"
+  ],
+  "author": "Abbey Hawk Sparrow <@khrome> (http://patternweaver.com)",
+  "contributors": [],
+  "bugs": {
+    "url": "https://github.com/khrome/joinerator/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/khrome/joinerator.git"
+  },
   "devDependencies": {
     "chai": "^4.3.6",
     "express": "^4.17.3",
