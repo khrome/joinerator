@@ -1,7 +1,8 @@
 const should = require('chai').should();
 const Joi = require('joi');
-const joist = require('../joi-st');
+const joinerator = require('../joinerator');
 const express = require('express');
+const path = require('path');
 const request = require('postman-request');
 
 const simpleSchema = Joi.object().keys({
@@ -18,10 +19,36 @@ const resultsSchema = Joi.object().keys({
     }))
 });
 
+const fetchReturnsList = (url, done)=>{
+    request.post(url, (err, res, body)=>{
+        let response = null;
+        try{
+            response = JSON.parse(body.toString());
+        }catch(ex){
+            should.not.exist(ex);
+        }
+        //todo: validate list
+        done()
+    })
+}
+
+const fetchReturnsObject = (url, done)=>{
+    request.post(url, (err, res, body)=>{
+        let response = null;
+        try{
+            response = JSON.parse(body.toString());
+        }catch(ex){
+            should.not.exist(ex);
+        }
+        //todo: validate object
+        done()
+    })
+}
+
 describe('Joinerator', ()=>{
     describe('can use a joi definition', ()=>{
         it('to generate simple objects', (done)=>{
-            let definition = new joist.Data(simpleSchema);
+            let definition = new joinerator.Data(simpleSchema);
             aSeedGenerated = definition.create('A');
             bSeedGenerated = definition.create('B');
             aSeedGenerated.should.not.deep.equal(bSeedGenerated);
@@ -35,7 +62,7 @@ describe('Joinerator', ()=>{
         });
 
         it('with arrays', (done)=>{
-            let definition = new joist.Data(resultsSchema);
+            let definition = new joinerator.Data(resultsSchema);
             aSeedGenerated = definition.create('A');
             should.exist(aSeedGenerated.results);
             Array.isArray(aSeedGenerated.results).should.equal(true);
@@ -52,7 +79,7 @@ describe('Joinerator', ()=>{
 
         it('as an endpoint', (done)=>{
             let app = express();
-            let definition = new joist.Data(resultsSchema);
+            let definition = new joinerator.Data(resultsSchema);
             definition.attach({
                 app  : app,
                 path : '/test/'
@@ -78,5 +105,29 @@ describe('Joinerator', ()=>{
                 })
             });
         });
+
+        it('as an API', (done)=>{
+            let app = express();
+            new joinerator.API({
+                app  : app,
+                directory : path.join(__dirname, 'api')
+            }, ()=>{
+                let domain = 'http://localhost:3000';
+                let server = app.listen(3000, ()=>{
+                    fetchReturnsList(domain+'/v1/user/list', ()=>{
+                        fetchReturnsList(domain+'/v1/transaction/list', ()=>{
+                            fetchReturnsObject(domain+'/v1/user/A', ()=>{
+                                fetchReturnsObject(domain+'/v1/transaction/A', ()=>{
+                                    server.close(()=>{
+                                        done();
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
     });
 });

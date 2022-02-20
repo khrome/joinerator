@@ -1,6 +1,9 @@
 const rand = require('seed-random');
 const faker = require('faker');
 const RandExp = require('randexp');
+const fs = require('fs');
+const path = require('path');
+const arrays = require('async-arrays');
 //augment faker
 faker.name.birthday = ()=>{
     let thirteenYearsAgo = new Date();
@@ -45,7 +48,7 @@ let randomInt = (from, to, fractionalGenerator) =>{
     return val;
 }
 
-const makeNewValue = (schema, rand) => {
+const makeNewValue = (schema, rand, fieldName) => {
     let rnd = randomInt(0, 1000000, rand);
     faker.seed(rnd);
     let max = null;
@@ -72,6 +75,11 @@ const makeNewValue = (schema, rand) => {
             (max || new Date())
         );
     }
+    if(fieldName && fakerFields[fieldName]){
+        let location = fakerFields[fieldName];
+        location = location.split('.');
+        return faker[location[0]][location[1]]();
+    }
 }
 
 const Random = {
@@ -97,6 +105,7 @@ let Data = function(definition){
         this.children = {};
         definition['_ids']['_byKey'].forEach((value, key)=>{
             this.children[key] = new Data(value.schema);
+            this.children[key].fieldName = key;
         });
     }else{
         if(
@@ -135,7 +144,7 @@ Data.prototype.create = function(seed){
                 }
                 return results;
             }else{
-                return makeNewValue(this.schema, generator)
+                return makeNewValue(this.schema, generator, this.fieldName)
             }
         }
     }
@@ -164,6 +173,93 @@ Data.prototype.attach = function(opts){ //endpoint, app, definition, input
     )
 };
 
+let API = function(opts, cb){
+    let options = opts || {};
+    if(!options.app) throw new Error('.attach() requires an app be passed');
+    if(!options.directory) throw new Error('.attach() requires a directory to be passed');
+    this.options = options;
+    this.scan(options.directory, cb || (()=>{}));
+};
+
+API.prototype.scan = function(directory, cb){
+    fs.readdir(directory, (err, result)=>{
+        if(err || (!result) || !result.length) return cb();
+        let resultSpec = null;
+        let errorSpec = null;
+        let specs = [];
+        arrays.forEachEmission(result, (item, index, done)=>{
+            let itemPath = path.join(directory, item);
+            fs.stat(itemPath, (err, stat)=>{
+                if(stat.isDirectory()){
+                    this.scan(itemPath, ()=>{
+                        done();
+                    })
+                }else{
+                    if(item === 'resultSet.spec.js'){
+                        resultSpec = require(itemPath);
+                        return done();
+                    }
+                    if(item === 'error.spec.js'){
+                        errorSpec = require(itemPath);
+                        return done();
+                    }
+                    if(item.indexOf('.spec.js')){
+                        specs.push({
+                            spec: item,
+                            path: directory
+                        });
+                        return done();
+                    }
+                    //nothing to do`
+                    done();
+                }
+            });
+        }, ()=>{
+            if(this.options.app){
+                specs.forEach((item)=>{
+                    let name = item.spec.split('.').shift();
+                    let localPath = directory.substring(this.options.directory.length);
+                    let listPath = localPath+'/'+name+'/list';
+                    let individualPath = localPath+'/'+name+'/:id';
+                    this.options.app[
+                        this.options.method?this.options.method.toLowerCase():'post'
+                    ](
+                        listPath,
+                        (req, res)=>{
+                            let spec = require(path.join(item.path, item.spec));
+                            let definition = new Data(resultSpec(spec));
+                            definition.fieldName = name;
+                            if(false){
+
+                            }else{
+                                res.send(JSON.stringify(definition.create('just_a_test')));
+                            }
+                        }
+                    );
+                    this.options.app[
+                        this.options.method?this.options.method.toLowerCase():'post'
+                    ](
+                        individualPath,
+                        (req, res)=>{
+                            let spec = require(path.join(item.path, item.spec))
+                            let definition = new Data(spec)
+                            if(false){
+
+                            }else{
+                                res.send(JSON.stringify(definition.create(req.params.id)));
+                            }
+                        }
+                    );
+                });
+                cb();
+            }else{
+                cb();
+            }
+        })
+    });
+};
+
 module.exports = {
-    Data: Data
+    Data: Data,
+    API: API
 }
