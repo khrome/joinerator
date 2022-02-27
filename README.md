@@ -3,30 +3,42 @@ JOInerator
 
 Use [Joi](https://joi.dev/) configurations as the primary record for your data.
 
-The goal of this library is to:
+The goal of this library is to, without anything more than a joi configuration:
 
-- validate your data
-- generate infinite, validatable, sample data
-- generate table definitions
-- generate DB migrations
-- guarantee an always valid datastore
+- generate infinite [data](https://en.wikipedia.org/wiki/Synthetic_data)
+- generate [table definitions](https://en.wikipedia.org/wiki/Table_(database))
+- generate [DB migrations](https://en.wikipedia.org/wiki/Schema_migration)
+- generate a document-centric [CRUD API](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete)
+
 
 It started as a simple data generator, but I realized the potential to use a single source of truth to both avoid replication within a project and make the work surface much simpler, as well as guarantee consistent validation throughout the application.
 
 
-Programmatic Usage
-------------------
+Joinerator.FakeData
+---------------
 
 ```javascript
     const Joinerator = require('joinerator');
-    let definition = new Joinerator.Data(joiSchema);
+    let definition = new Joinerator.FakeData(joiSchema);
     let generatedData = definition.create('my-seed-value');
     //generatedData contains the data we created
 ```
 
 
-API Attachment
+Joinerator.SQLTable
+-------------------
+
+```javascript
+    const Joinerator = require('joinerator');
+    let definition = new Joinerator.SQLTable(joiSchema);
+    let sql = definition.table('my-table-name', 'sql');
+    //sql contains the staements we created
+```
+
+Joinerator.API
 --------------
+To bind a specific URL to an already existing express instance(`expressInstance`):
+
 ```javascript
     const Joinerator = require('joinerator');
     let definition = new Joinerator.Data(joiSchema);
@@ -37,10 +49,7 @@ API Attachment
     expressInstance.listen(port);
     //now requests to `/url/path/` generate data
 ```
-
-API Usage
----------
-Given a directory structure:
+Alternatively, given a directory structure:
 ```bash
 └── v1
    ├── error.spec.js
@@ -66,6 +75,21 @@ new Joinerator.API({
 
 There aren't many options, everything is currently JSON and incoming validation isn't quite ready yet. Otherwise, go crazy.
 
+
+Roadmap
+-------
+- [x] validate your data
+- [x] generate infinite, validatable, sample data
+- [x] generate table definitions
+- [ ] generate DB migrations
+- [ ] guarantee an always valid datastore
+- [ ] crud backend with `expand` verb and pluggable sources, caches and streams
+- [ ] client library (auto-loading data from store)
+- [ ] JSON+comments compatible schema format (JSOSN)
+- [ ] support deep JSON in relational DBs
+- [ ] reference-free usage*
+
+* - using proxies to replicate infinite data space in async fns
 
 Testing
 -------
