@@ -1,21 +1,27 @@
 const should = require('chai').should();
-const Joi = require('joi');
+const {joi} = require('joi-traverse');
 const joinerator = require('../joinerator');
 const express = require('express');
 const path = require('path');
 const request = require('postman-request');
 
-const simpleSchema = Joi.object().keys({
-    email: Joi.string().email().required(),
-    phone: Joi.string().regex(/^\d{3}-\d{3}-\d{4}$/).required(),
-    birthday: Joi.date().max('1-1-2004').iso()
+const simpleSchema = joi.object().keys({
+    email: joi.string().email().required(),
+    phone: joi.string().regex(/^\d{3}-\d{3}-\d{4}$/).required(),
+    birthday: joi.date().max('1-1-2004').iso()
 });
 
-const resultsSchema = Joi.object().keys({
-    results: Joi.array().items(Joi.object().keys({
-        email: Joi.string().email().required(),
-        phone: Joi.string().regex(/^\d{3}-\d{3}-\d{4}$/).required(),
-        birthday: Joi.date().max('1-1-2004').iso()
+const simpleSQL = `CREATE TABLE IF NOT EXISTS simple_table(
+    email VARCHAR(255),
+    phone VARCHAR(255),
+    birthday DATETIME
+)`;
+
+const resultsSchema = joi.object().keys({
+    results: joi.array().items(joi.object().keys({
+        email: joi.string().email().required(),
+        phone: joi.string().regex(/^\d{3}-\d{3}-\d{4}$/).required(),
+        birthday: joi.date().max('1-1-2004').iso()
     }))
 });
 
@@ -46,9 +52,9 @@ const fetchReturnsObject = (url, done)=>{
 }
 
 describe('Joinerator', ()=>{
-    describe('can use a joi definition', ()=>{
+    describe('can generate data', ()=>{
         it('to generate simple objects', (done)=>{
-            let definition = new joinerator.Data(simpleSchema);
+            let definition = new joinerator.FakeData(simpleSchema);
             aSeedGenerated = definition.create('A');
             bSeedGenerated = definition.create('B');
             aSeedGenerated.should.not.deep.equal(bSeedGenerated);
@@ -62,7 +68,7 @@ describe('Joinerator', ()=>{
         });
 
         it('with arrays', (done)=>{
-            let definition = new joinerator.Data(resultsSchema);
+            let definition = new joinerator.FakeData(resultsSchema);
             aSeedGenerated = definition.create('A');
             should.exist(aSeedGenerated.results);
             Array.isArray(aSeedGenerated.results).should.equal(true);
@@ -79,7 +85,7 @@ describe('Joinerator', ()=>{
 
         it('as an endpoint', (done)=>{
             let app = express();
-            let definition = new joinerator.Data(resultsSchema);
+            let definition = new joinerator.FakeData(resultsSchema);
             definition.attach({
                 app  : app,
                 path : '/test/'
@@ -127,6 +133,32 @@ describe('Joinerator', ()=>{
                     });
                 });
             });
+        });
+
+    });
+
+    describe('can generate SQL Table definitions', ()=>{
+        it('to generate simple objects', (done)=>{
+            let definition = new joinerator.SQLTable(simpleSchema);
+            let tableDefinition = definition.table('simple_table', 'sql');
+            tableDefinition.should.equal(simpleSQL);
+            done();
+        });
+
+        it.skip('with arrays', (done)=>{
+            let definition = new joinerator.FakeData(resultsSchema);
+            aSeedGenerated = definition.create('A');
+            should.exist(aSeedGenerated.results);
+            Array.isArray(aSeedGenerated.results).should.equal(true);
+            let validated = resultsSchema.validate(aSeedGenerated);
+            should.not.exist(validated.error);
+            validated.value.should.deep.equal(aSeedGenerated);
+            aSeedGenerated.results.forEach((item)=>{
+                let aValidated = simpleSchema.validate(item);
+                should.not.exist(aValidated.error);
+                aValidated.value.should.deep.equal(item);
+            });
+            done();
         });
 
     });

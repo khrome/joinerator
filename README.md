@@ -1,9 +1,17 @@
 JOInerator
 ==========
 
-Turn [Joi](https://joi.dev/) configurations into deterministic sample data APIs with little to no effort.
+Use [Joi](https://joi.dev/) configurations as the primary record for your data.
 
-The results are deterministic (the same inputs always produce the same outputs), but not coherent (various fields may not make sense (IE: a zipcode in one location, an area code from another, etc.)).
+The goal of this library is to:
+    - validate your data
+    - generate infinite, validatable, sample data
+    - generate table definitions
+    - generate DB migrations
+    - guarantee an always valid datastore
+
+It started as a simple data generator, but I realized the potential to use a single source of truth to both avoid replication within a project and make the work surface much simpler, as well as guarantee consistent validation throughout the application.
+
 
 Programmatic Usage
 ------------------
