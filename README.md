@@ -4,6 +4,7 @@ JOInerator
 Use [Joi](https://joi.dev/) configurations as the primary record for your data.
 
 The goal of this library is to:
+
     - validate your data
     - generate infinite, validatable, sample data
     - generate table definitions
